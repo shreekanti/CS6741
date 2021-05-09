@@ -1,0 +1,198 @@
+### A Pluto.jl notebook ###
+# v0.14.5
+
+using Markdown
+using InteractiveUtils
+
+# ╔═╡ 644baa2c-dcc7-4a67-9a3d-77e348cff4d8
+using Random
+
+# ╔═╡ 224cd0b3-de2c-4f06-b50e-2789a68773b7
+using Distributions
+
+# ╔═╡ bb31022e-20ef-4da6-9bf0-957749863ee4
+using QuadGK
+
+# ╔═╡ 5fdd95db-0b1c-4228-acd1-b6b8efd55ea9
+begin
+	using StatsPlots
+	using Plots
+	plotly()
+end
+
+# ╔═╡ db86a0d7-e4f2-4e64-a37c-c98aa846a79f
+md"# Question 1"
+
+# ╔═╡ 1ba97a8a-1984-46a4-8c6f-39540f61e2a2
+md"**Using Monte Carlo simulation**"
+
+# ╔═╡ c24ab758-5d0c-4472-bc51-967c03357d6a
+begin	
+	n = 1000000
+	faces =[0,1]
+	data=rand(faces,n,50 )	
+	exp = sum(data, dims = 2)	
+	count(i->i>=30,exp)/n
+end
+
+# ╔═╡ 364570b1-8d99-42f3-9eae-8ac874e43966
+md"**Computation using binomial distribution**"
+
+# ╔═╡ cfe557ae-810a-4086-819e-ef7456191151
+begin
+	b = Binomial(50,0.5)
+	ans1=1-cdf(b,29)
+end
+
+# ╔═╡ d8a1ad52-1f0b-4ec4-a4a5-166aa72128e4
+md"**Approximation using Central Limit Theorem**"
+
+# ╔═╡ d6eef4b0-a3ff-4ec4-aeac-977abc25c2af
+begin
+	
+	mean = 0.5
+	std = 0.5
+	d = Normal(mean *50,std*sqrt(50))
+	ans=1- cdf(d,29.5)
+end
+
+# ╔═╡ e701f92b-3b8c-4740-815d-8b435d230aee
+md"# Question 2"
+
+# ╔═╡ 5ea083ab-11fc-4bfb-a797-ca324c7e69ae
+md"**Using Central Limit Theorem**"
+
+# ╔═╡ 0607c03a-2aff-444b-a052-cafe3b1761a5
+begin
+	p=0.5
+	while(p<1)
+		mean_=p
+		d1=Normal(mean_*50,sqrt((1-p)*p)*sqrt(50))
+		res=quadgk(y->pdf(d1,y),29.5,50)[1]
+		p=p+0.0000001
+		if(res>=0.5)
+			break
+		end
+		
+	end
+	p	
+end
+
+# ╔═╡ 0f8746d0-915b-4464-9d79-1f4d4faa00e6
+md"**Computation using Monte Carlo simulation**"
+
+# ╔═╡ fdbd5d05-7fde-4722-a0d3-bc92acfbc941
+begin
+	arr=[0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,0]
+	n11=1000000
+	final=0
+	for _ in 1:n11
+		no_head=0
+		for _ in 1:50
+			if(rand(arr)==1)
+				no_head = no_head + 1
+			end
+		end
+		if(no_head >= 30)
+			final = final + 1
+		end
+	end
+	final = final / n11
+end
+
+# ╔═╡ e06f5b80-ba48-4f98-9319-3fe84b9a4013
+md"**Computation using Binomial Distributionn**"
+
+# ╔═╡ cd372313-2ba7-4742-bafc-5090f687e871
+sum([binomial(50,i)*(0.59)^(i)*(0.41)^(50-i) for i in 30:50])
+
+# ╔═╡ fc515183-ce09-409d-800e-f4ae06437755
+md"# Question 3"
+
+# ╔═╡ 3bcd35e2-d761-4290-81b2-e06e11a5589d
+begin
+	n1= 100000
+	mean1 = 100
+	std1 = 30
+	for i in 1:n1    
+	    println(i*mean1," ,", sqrt(i)*std)
+	    if  1-cdf(Normal(i*mean1, sqrt(i)*std1),3000)>=0.95
+	        println(pdf(Normal(i*mean1, sqrt(i)*std1),3000))
+	        println(i)
+	        break
+	    end
+	end
+end
+
+# ╔═╡ 87f8e5d7-18e8-4001-9806-f3c448956b8d
+md"# Question 4"
+
+# ╔═╡ bfef64ee-a2b1-4398-bb99-a8876a22c3e5
+function compute(s)
+	Random.seed!(0)
+	for sample in 2:400
+		arr11=Float64[]
+		for j in 1:10000
+			var = (rand(s,sample).- Distributions.mean(s)) ./Distributions.std(s)
+			push!(arr11, Distributions.mean(var))
+		end
+		
+		a = sqrt(sample)
+		arr11 = arr11 * a
+
+		kurto= abs(Distributions.kurtosis(arr11)) - abs(Distributions.kurtosis(Normal(0,1)))
+		
+		mean11 =abs(Distributions.mean(arr11)) - abs(Distributions.mean(Normal(0,1)))
+		
+		std_deviation = abs(Distributions.std(arr11)) - abs(Distributions.std(Normal(0,1)))
+		
+		skew_=abs(Distributions.skewness(arr11)) - abs(Distributions.skewness(Normal(0,1)))
+		
+        if(abs(kurto) < 0.1 && 
+				abs(mean11) < 0.1 &&
+				abs(std_deviation) < 0.1 && 	 
+				abs(skew_)<0.1 )
+			return sample
+		end
+	end
+end
+
+# ╔═╡ a60f33c4-e98c-4c81-8e01-69e5a56383e6
+compute(Uniform(0,1))
+
+# ╔═╡ aef67e57-440c-4e77-a75e-5e1d2d9e69f0
+compute(Binomial(100,0.01))
+
+# ╔═╡ 0fe303f6-0cc3-482d-b263-cdd1146e63c6
+compute(Binomial(100,0.5))
+
+# ╔═╡ 164d81dc-eb17-42f4-b690-cceb083b87c5
+compute(Chisq(3))
+
+# ╔═╡ Cell order:
+# ╟─db86a0d7-e4f2-4e64-a37c-c98aa846a79f
+# ╠═644baa2c-dcc7-4a67-9a3d-77e348cff4d8
+# ╟─1ba97a8a-1984-46a4-8c6f-39540f61e2a2
+# ╠═c24ab758-5d0c-4472-bc51-967c03357d6a
+# ╟─364570b1-8d99-42f3-9eae-8ac874e43966
+# ╠═224cd0b3-de2c-4f06-b50e-2789a68773b7
+# ╠═cfe557ae-810a-4086-819e-ef7456191151
+# ╟─d8a1ad52-1f0b-4ec4-a4a5-166aa72128e4
+# ╠═d6eef4b0-a3ff-4ec4-aeac-977abc25c2af
+# ╟─e701f92b-3b8c-4740-815d-8b435d230aee
+# ╟─5ea083ab-11fc-4bfb-a797-ca324c7e69ae
+# ╠═bb31022e-20ef-4da6-9bf0-957749863ee4
+# ╠═0607c03a-2aff-444b-a052-cafe3b1761a5
+# ╟─0f8746d0-915b-4464-9d79-1f4d4faa00e6
+# ╠═fdbd5d05-7fde-4722-a0d3-bc92acfbc941
+# ╟─e06f5b80-ba48-4f98-9319-3fe84b9a4013
+# ╠═cd372313-2ba7-4742-bafc-5090f687e871
+# ╟─fc515183-ce09-409d-800e-f4ae06437755
+# ╠═3bcd35e2-d761-4290-81b2-e06e11a5589d
+# ╟─87f8e5d7-18e8-4001-9806-f3c448956b8d
+# ╠═5fdd95db-0b1c-4228-acd1-b6b8efd55ea9
+# ╠═bfef64ee-a2b1-4398-bb99-a8876a22c3e5
+# ╠═a60f33c4-e98c-4c81-8e01-69e5a56383e6
+# ╠═aef67e57-440c-4e77-a75e-5e1d2d9e69f0
+# ╠═0fe303f6-0cc3-482d-b263-cdd1146e63c6
+# ╠═164d81dc-eb17-42f4-b690-cceb083b87c5
